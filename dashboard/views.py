@@ -3,19 +3,35 @@ from landing.models import Service, Portfolio, Testimonial, BlogPost, Contact
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.db import IntegrityError
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.urls import reverse
+
+
+
+def is_admin(user):
+    return user.is_authenticated and user.is_staff
+
+def admin_required(view_func):
+    def wrapper(request, *args, **kwargs):
+        if is_admin(request.user):
+            return view_func(request, *args, **kwargs)
+        else:
+            messages.error(request, "Bu sahifaga kirish uchun admin huquqlari kerak.")
+            return redirect(reverse('login'))
+    return wrapper
 
 
 
 def index(request):
     return render(request, 'dashboard/base.html')
 
-
+@admin_required
 def contact_list(request):
     contacts = Contact.objects.all().order_by('harakatlar')
     return render(request, 'dashboard/contact/list.html', {'contacts': contacts})
 
 
+@admin_required
 def update_status(request, id):
     contact = Contact.objects.get(id=id)
     contact.harakatlar = True
@@ -28,12 +44,12 @@ def update_status(request, id):
 
 # CRUD for service models
 
-
+@admin_required
 def service_list(request):
     services = Service.objects.all()
     return render(request, 'dashboard/service/list.html', {'services': services})
 
-
+@admin_required
 def service_create(request):
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -47,7 +63,7 @@ def service_create(request):
             messages.error(request, "Barcha maydonlarni to'ldiring.")
     return render(request, 'dashboard/service/create.html')
 
-
+@admin_required
 def service_update(request, id):
     service = get_object_or_404(Service, id=id)
     if request.method == 'POST':
@@ -60,7 +76,7 @@ def service_update(request, id):
         return redirect('service_list')
     return render(request, 'dashboard/service/update.html', {'service': service})
 
-
+@admin_required
 def service_delete(request, id):
     service = get_object_or_404(Service, id=id)
     if request.method == 'POST':
@@ -77,7 +93,7 @@ def portfolio_list(request):
     portfolios = Portfolio.objects.all()
     return render(request, 'dashboard/portfolio/list.html', {'portfolios': portfolios})
 
-
+@admin_required
 def portfolio_create(request):
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -95,7 +111,7 @@ def portfolio_create(request):
         return redirect('portfolio_list')
     return render(request, 'dashboard/portfolio/create.html')
 
-
+@admin_required
 def portfolio_update(request, id):
     portfolio = get_object_or_404(Portfolio, id=id)
     if request.method == 'POST':
@@ -109,7 +125,7 @@ def portfolio_update(request, id):
         return redirect('portfolio_list')
     return render(request, 'dashboard/portfolio/update.html', {'portfolio': portfolio})
 
-
+@admin_required
 def portfolio_delete(request, id):
     portfolio = get_object_or_404(Portfolio, id=id)
     if request.method == 'POST':
@@ -126,7 +142,7 @@ def testimonial_list(request):
     testimonials = Testimonial.objects.all()
     return render(request, 'dashboard/testimonial/list.html', {'testimonials': testimonials})
 
-
+@admin_required
 def testimonial_create(request):
     if request.method == 'POST':
         data = request.POST
@@ -149,7 +165,7 @@ def testimonial_create(request):
     
     return render(request, 'dashboard/testimonial/create.html')
 
-
+@admin_required
 def testimonial_update(request, id):
     testimonial = get_object_or_404(Testimonial, id=id)
     if request.method == 'POST':
@@ -163,7 +179,7 @@ def testimonial_update(request, id):
         return redirect('testimonial_list')
     return render(request, 'dashboard/testimonial/update.html', {'testimonial': testimonial})
 
-
+@admin_required
 def testimonial_delete(request, id):
     testimonial = get_object_or_404(Testimonial, id=id)
     if request.method == 'POST':
@@ -180,7 +196,7 @@ def blog_post_list(request):
     blog_posts = BlogPost.objects.all()
     return render(request, 'dashboard/blog_post/list.html', {'blog_posts': blog_posts})
 
-
+@admin_required
 def blog_post_create(request):
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -198,7 +214,7 @@ def blog_post_create(request):
         return redirect('blog_list')
     return render(request, 'dashboard/blog_post/create.html')
 
-
+@admin_required
 def blog_post_update(request, id):
     blog_post = get_object_or_404(BlogPost, id=id)
     if request.method == 'POST':
@@ -212,7 +228,7 @@ def blog_post_update(request, id):
         return redirect('blog_post_list')
     return render(request, 'dashboard/blog_post/update.html', {'blog_post': blog_post})
 
-
+@admin_required
 def blog_post_delete(request, id):
     blog_post = get_object_or_404(BlogPost, id=id)
     if request.method == 'POST':
@@ -237,10 +253,10 @@ def contact_create(request):
             phone=phone,
             harakatlar=harakatlar
         )
-        return redirect('contact_list')
+        return redirect('landing:index')
     return render(request, 'dashboard/contact/create.html')
 
-
+@admin_required
 def contact_update(request, id):
     contact = get_object_or_404(Contact, id=id)
     if request.method == 'POST':
@@ -252,7 +268,7 @@ def contact_update(request, id):
         return redirect('contact_list')
     return render(request, 'dashboard/contact/update.html', {'contact': contact})
 
-
+@admin_required
 def contact_delete(request, id):
     contact = get_object_or_404(Contact, id=id)
     if request.method == 'POST':
@@ -268,7 +284,14 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('dashboard:index')
+            return redirect('dashboard_index')
         else:
             return render(request, 'dashboard/login_user.html', {'error': 'Invalid username or password'})
     return render(request, 'dashboard/login_user.html')
+
+
+
+
+def user_logout(request):
+    logout(request)
+    return redirect('landing:index')

@@ -3,7 +3,8 @@ from .views import (index, contact_list, update_status, service_list, service_cr
                    portfolio_create, portfolio_update, portfolio_list, portfolio_delete,
                    blog_post_list, blog_post_create, blog_post_update, blog_post_delete,
                    testimonial_list, testimonial_create, testimonial_update, testimonial_delete,
-                   contact_list, contact_create, contact_update, contact_delete, user_login)
+                   contact_list, contact_create, contact_update, contact_delete, user_login, user_logout)
+
 
 
 
@@ -47,5 +48,6 @@ urlpatterns = [
     # =========================================================================
 
     path('login/', user_login, name="login"),
+    path('logout/', user_logout, name="logout"),
 ]
 
